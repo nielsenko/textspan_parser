@@ -1,0 +1,24 @@
+name: textspan_parser
+description: A new Flutter package project.
+version: 0.0.1
+homepage: https://github.com/nielsenko/textspan_parser
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  petitparser: any  
+  golden_toolkit: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    #empty folder to force FontManifest.json to be generated
+    - images/
