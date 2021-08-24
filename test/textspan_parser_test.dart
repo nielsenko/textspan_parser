@@ -1,7 +1,21 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golden_toolkit/golden_toolkit.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:textspan_parser/textspan_parser.dart';
+
+import 'fake_path_provider.dart';
+
+class CustomHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    // TODO: implement createHttpClient
+    return super.createHttpClient(context);
+  }
+}
 
 void main() {
   test('parse text', () {
@@ -37,41 +51,31 @@ void main() {
     expect(eval.parse('Hello {italic world!}').isSuccess, isTrue);
   });
 
-  testGoldens('Hello World!', (tester) async {
-    final theme = Typography.englishLike2018;
-    const style = TextStyle(fontWeight: FontWeight.normal);
-    final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build<TextSpan>();
+  group('Goldens', () {
+    setUp(() async {
+      PathProviderPlatform.instance = FakePathProviderPlatform();
+    });
 
-    final builder = GoldenBuilder.grid(columns: 2, widthToHeightRatio: 3)
-      ..addScenario('1', Text.rich(eval.parse('Hello {underline World!}').value))
-      ..addScenario('2', Text.rich(eval.parse('Hello {italic world!}. My name is {underline Kasper}').value))
-      ..addScenario('3', Text.rich(eval.parse('Hello {italic w{headline4 o}rld!}').value));
+    testGoldens('Hello World!', (tester) async {
+      final theme = Typography.englishLike2018;
+      const style = TextStyle(fontWeight: FontWeight.normal);
+      final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build<TextSpan>();
 
-    await tester.pumpWidgetBuilder(builder.build());
-    await screenMatchesGolden(tester, 'hello_world_grid');
-  });
+      final builder = GoldenBuilder.grid(columns: 2, widthToHeightRatio: 3)
+        ..addScenario('1', Text.rich(eval.parse('Hello {underline World!}').value))
+        ..addScenario('2', Text.rich(eval.parse('Hello {italic world!}. My name is {underline Kasper}').value))
+        ..addScenario('3', Text.rich(eval.parse('Hello {italic w{headline4 o}rld!}').value));
 
-  TextStyleEvaluator customEvaluator = (theme, style, command) {
-    final arguments = command.argv;
-    if (arguments.length > 1) {
-      final op = arguments[0];
-      final arg = arguments[1];
-      switch (op) {
-        case 'color':
-          return theme.apply(color: Color(int.parse(arg, radix: 16)));
-        case 'font':
-          return theme.apply(fontFamily: arg);
-      }
-    }
-    return defaultTextStyleEvaluator(theme, style, command);
-  };
+      await tester.pumpWidgetBuilder(builder.build());
+      await screenMatchesGolden(tester, 'hello_world_grid');
+    });
 
-  testGoldens('Theme styles', (tester) async {
-    final theme = Typography.englishLike2018;
-    const style = TextStyle(fontWeight: FontWeight.normal);
-    final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build<TextSpan>();
+    testGoldens('Theme styles', (tester) async {
+      final theme = Typography.englishLike2018;
+      const style = TextStyle(fontWeight: FontWeight.normal);
+      final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build<TextSpan>();
 
-    final builder = GoldenBuilder.column()..addScenario('complex', Text.rich(eval.parse(r'''
+      final builder = GoldenBuilder.column()..addScenario('styles', Text.rich(eval.parse(r'''
       {bodyText1 bodyText1}
       {bodyText2 bodyText2}
       {button button}
@@ -88,82 +92,121 @@ void main() {
       {subtitle2 subtitle2}
       ''').value));
 
-    await tester.pumpWidgetBuilder(builder.build());
-    await screenMatchesGolden(tester, 'theme_styles');
-  });
+      await tester.pumpWidgetBuilder(builder.build());
+      await screenMatchesGolden(tester, 'theme_styles');
+    });
 
-  testGoldens('Complex example', (tester) async {
-    final theme = Typography.englishLike2018;
-    const style = TextStyle(fontWeight: FontWeight.normal);
-    final eval = TextSpanEvaluator(theme, style, customEvaluator).build<TextSpan>();
+    TextStyleEvaluator customEvaluator = (style, theme, command) {
+      final arguments = command.argv;
+      if (arguments.length > 1) {
+        final op = arguments[0];
+        final arg = arguments[1];
+        switch (op) {
+          case 'color':
+            return style.apply(color: Color(int.parse(arg, radix: 16)));
+          case 'font':
+            return GoogleFonts.getFont(arg.replaceAll('_', ' '), textStyle: style);
+        }
+      }
+      return defaultTextStyleEvaluator(style, theme, command);
+    };
 
-    final builder = GoldenBuilder.column()..addScenario('complex', Text.rich(eval.parse(r'''
-      {headline3 A complex example...}
-      This is a normal paragraph, sprinkled with a bit of {italic italic}, a bit of 
-      {caption theming}, and a pinch of {color:ffff0000 color}.
+    testGoldens('Complex example', (tester) async {
+      final theme = Typography.englishLike2018;
+      const style = TextStyle(fontWeight: FontWeight.normal);
+      final eval = TextSpanEvaluator(theme, style, customEvaluator).build<TextSpan>();
 
-      {bold {italic {underline {color:ff0000ff Now}}}} it gets interesting with nested commands.
-      This was achieved with \{bold \{italic \{underline \{color:ff0000ff Now\}\}\}\}.
-      ''').value));
+      final span = (await tester.runAsync(() async {
+        final result = HttpOverrides.runWithHttpOverrides(() {
+          return eval
+              .parse(r'''
+{headline4 A complex example...}
+\n
+This is a normal paragraph, sprinkled with a bit of {italic italic}, a bit of 
+{caption theming}, and a pinch of {color:ffff0000 color}.
+\n\n
+The {italic color} command is an example of a custom command, that is interpreted 
+by a user supplied {italic TextStyleEvaluator}
+\n\n
+{bold {italic {underline {color:ff0000ff Now}}}} it gets interesting with a series 
+of nested commands. This was achieved with the script: 
+{italic \{bold \{italic \{underline \{color:ff0000ff Now\}\}\}\}}. 
+\n\n
+Using {font:Comic_Neue a {headline6 {italic dynamically}} loaded google font} is another 
+trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
+                  .replaceAll('\n', '')) // strip implicit newlines
+              .value;
+        }, CustomHttpOverrides());
+        await Future.delayed(const Duration(seconds: 1)); // wait for font to load
+        return result;
+      }))!;
 
-    await tester.pumpWidgetBuilder(builder.build());
-    await screenMatchesGolden(tester, 'complex');
-  });
-
-  testGoldens('Alignment', (tester) async {
-    final builder = GoldenBuilder.column(
+      final builder = GoldenBuilder.column(
         wrap: (w) => Container(
-              child: w,
-              width: 200,
-            ))
-      ..addScenario('plain', Text('Hello'))
-      ..addScenario(
-        'overflow',
-        Text.rich(
-          TextSpan(children: [
-            TextSpan(text: 'Hello my friend! '),
-            TextSpan(text: 'How do you do?', style: TextStyle(decoration: TextDecoration.underline)),
-          ]),
+          child: w,
+          width: 300, // force line-wrap
         ),
-      )
-      ..addScenario(
-        'center',
-        Text.rich(
-          TextSpan(text: 'Hello'),
-          textAlign: TextAlign.center,
-        ),
-      )
-      ..addScenario(
-        'end',
-        Text.rich(
-          TextSpan(text: 'Hello'),
-          textAlign: TextAlign.end,
-        ),
-      )
-      ..addScenario(
-        'overflow-then-end',
-        Text.rich(
-          TextSpan(children: [
-            TextSpan(text: 'Hello my friend! How do you do? '),
-            WidgetSpan(
-              child: Flex(
-                direction: Axis.horizontal,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'foo',
-                      textAlign: TextAlign.end,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            TextSpan(text: 'Hello', style: TextStyle()),
-          ]),
-        ),
-      );
+      )..addScenario('complex', Text.rich(span));
+      await tester.pumpWidgetBuilder(builder.build());
+      await screenMatchesGolden(tester, 'complex');
+    });
 
-    await tester.pumpWidgetBuilder(builder.build());
-    await screenMatchesGolden(tester, 'alignment');
+    testGoldens('Alignment', (tester) async {
+      final builder = GoldenBuilder.column(
+        wrap: (w) => Container(
+          child: w,
+          width: 200,
+        ),
+      )
+        ..addScenario('plain', Text('Hello'))
+        ..addScenario(
+          'overflow',
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(text: 'Hello my friend! '),
+              TextSpan(text: 'How do you do?', style: TextStyle(decoration: TextDecoration.underline)),
+            ]),
+          ),
+        )
+        ..addScenario(
+          'center',
+          Text.rich(
+            TextSpan(text: 'Hello'),
+            textAlign: TextAlign.center,
+          ),
+        )
+        ..addScenario(
+          'end',
+          Text.rich(
+            TextSpan(text: 'Hello'),
+            textAlign: TextAlign.end,
+          ),
+        )
+        ..addScenario(
+          'overflow-then-end',
+          Text.rich(
+            TextSpan(children: [
+              TextSpan(text: 'Hello my friend! How do you do? '),
+              WidgetSpan(
+                child: Flex(
+                  direction: Axis.horizontal,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'foo',
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextSpan(text: 'Hello', style: TextStyle()),
+            ]),
+          ),
+        );
+
+      await tester.pumpWidgetBuilder(builder.build());
+      await screenMatchesGolden(tester, 'alignment');
+    });
   });
 }

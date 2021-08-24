@@ -1,5 +1,18 @@
 name: textspan_parser
-description: A new Flutter package project.
+description: >-
+  A package to create TextSpans from a textual representation.
+  The typical use case is to allow text styling to be determined 
+  by the translator when localizing an app.
+
+  Example:
+  en-US: Unfortunately, my {\italic neighbor} had eaten my shoes.
+  da: Desværre havde min {\italic nabo} spist mine sko.
+
+  Notice how neighbor (= nabo) and had (= havde) are reversed in 
+  danish (da), compared to american english (en-US). This implies 
+  that if we want "neighbor" to appear in italic, we need to decide
+  where the text should be split in spans during translation.
+
 version: 0.0.1
 homepage: https://github.com/nielsenko/textspan_parser
 
@@ -15,10 +28,12 @@ dependencies:
 
 dev_dependencies:
   flutter_test:
-    sdk: flutter
+    sdk: flutter  
+  google_fonts: any
+  path_provider: any
+  test: any
 
 flutter:
   uses-material-design: true
   assets:
-    #empty folder to force FontManifest.json to be generated
-    - images/
+    - google_fonts/
