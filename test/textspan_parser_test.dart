@@ -30,7 +30,7 @@ void main() {
   });
 
   test('evaluate textSpan', () {
-    final theme = Typography.material2018(platform: TargetPlatform.iOS).black;
+    final theme = Typography.englishLike2018;
     const style = TextStyle();
     final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build();
 
@@ -38,17 +38,76 @@ void main() {
   });
 
   testGoldens('Hello World!', (tester) async {
-    final theme = Typography.material2018(platform: TargetPlatform.iOS).black;
+    final theme = Typography.englishLike2018;
     const style = TextStyle(fontWeight: FontWeight.normal);
     final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build<TextSpan>();
 
     final builder = GoldenBuilder.grid(columns: 2, widthToHeightRatio: 3)
       ..addScenario('1', Text.rich(eval.parse('Hello {underline World!}').value))
-      ..addScenario('2', Text.rich(eval.parse('Hello {bold world!}. My name is {underline Kasper}').value))
-      ..addScenario('3', Text.rich(eval.parse('Hello {bold w{headline1 o}rld!}').value));
+      ..addScenario('2', Text.rich(eval.parse('Hello {italic world!}. My name is {underline Kasper}').value))
+      ..addScenario('3', Text.rich(eval.parse('Hello {italic w{headline4 o}rld!}').value));
 
     await tester.pumpWidgetBuilder(builder.build());
     await screenMatchesGolden(tester, 'hello_world_grid');
+  });
+
+  TextStyleEvaluator customEvaluator = (theme, style, command) {
+    final arguments = command.argv;
+    if (arguments.length > 1) {
+      final op = arguments[0];
+      final arg = arguments[1];
+      switch (op) {
+        case 'color':
+          return theme.apply(color: Color(int.parse(arg, radix: 16)));
+        case 'font':
+          return theme.apply(fontFamily: arg);
+      }
+    }
+    return defaultTextStyleEvaluator(theme, style, command);
+  };
+
+  testGoldens('Theme styles', (tester) async {
+    final theme = Typography.englishLike2018;
+    const style = TextStyle(fontWeight: FontWeight.normal);
+    final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build<TextSpan>();
+
+    final builder = GoldenBuilder.column()..addScenario('complex', Text.rich(eval.parse(r'''
+      {bodyText1 bodyText1}
+      {bodyText2 bodyText2}
+      {button button}
+      {caption caption}
+      {headline1 headline1}
+      {headline2 headline2}
+      {headline3 headline3}
+      {headline4 headline4}
+      {headline5 headline5}
+      {headline5 headline5}
+      {headline6 headline6}
+      {overline overline}
+      {subtitle1 subtitle1}
+      {subtitle2 subtitle2}
+      ''').value));
+
+    await tester.pumpWidgetBuilder(builder.build());
+    await screenMatchesGolden(tester, 'theme_styles');
+  });
+
+  testGoldens('Complex example', (tester) async {
+    final theme = Typography.englishLike2018;
+    const style = TextStyle(fontWeight: FontWeight.normal);
+    final eval = TextSpanEvaluator(theme, style, customEvaluator).build<TextSpan>();
+
+    final builder = GoldenBuilder.column()..addScenario('complex', Text.rich(eval.parse(r'''
+      {headline3 A complex example...}
+      This is a normal paragraph, sprinkled with a bit of {italic italic}, a bit of 
+      {caption theming}, and a pinch of {color:ffff0000 color}.
+
+      {bold {italic {underline {color:ff0000ff Now}}}} it gets interesting with nested commands.
+      This was achieved with \{bold \{italic \{underline \{color:ff0000ff Now\}\}\}\}.
+      ''').value));
+
+    await tester.pumpWidgetBuilder(builder.build());
+    await screenMatchesGolden(tester, 'complex');
   });
 
   testGoldens('Alignment', (tester) async {
@@ -86,7 +145,6 @@ void main() {
         Text.rich(
           TextSpan(children: [
             TextSpan(text: 'Hello my friend! How do you do? '),
-//            WidgetSpan(child: Flex(direction: Axis.horizontal, children: [Spacer()])),
             WidgetSpan(
               child: Flex(
                 direction: Axis.horizontal,

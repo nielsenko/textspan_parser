@@ -30,7 +30,7 @@ extension Intertwined<T> on Parser<T> {
   }
 }
 
-typedef TextStyleEvaluator = TextStyle Function(TextStyle, TextTheme, String);
+typedef TextStyleEvaluator = TextStyle Function(TextStyle, TextTheme, Command);
 
 abstract class Node {
   TextSpan toTextSpan(TextStyle style, TextTheme theme, TextStyleEvaluator evaluator);
@@ -65,7 +65,7 @@ class TextNode extends Node {
 }
 
 class SpanNode extends Node {
-  final String command;
+  final Command command;
   final Node node;
 
   SpanNode(this.command, this.node);
@@ -81,6 +81,12 @@ class SpanNode extends Node {
   }
 }
 
+class Command {
+  final List<String> argv;
+
+  Command(this.argv);
+}
+
 class TextSpanDefinition extends GrammarDefinition {
   @override
   Parser start() => ref0(textSpan).end();
@@ -89,13 +95,14 @@ class TextSpanDefinition extends GrammarDefinition {
         return MixedNode(subSpans);
       });
 
-  Parser<SpanNode> span() => (beginSpan() & command().trim() & ref0(textSpan) & endSpan()).map((list) {
-        final command = list[1] as String;
+  Parser<SpanNode> span() => (beginSpan() & command() & ref0(textSpan) & endSpan()).map((list) {
+        final command = list[1] as Command;
         final node = list[2] as Node;
         return SpanNode(command, node);
       });
 
-  Parser<String> command() => (letter() & word().star()).flatten();
+  Parser<Command> command() =>
+      ((letter() & word().star()).flatten().trim()).separatedBy<String>(char(':'), includeSeparators: false).map((c) => Command(c));
 
   Parser<String> text() => characterPrimitive().star().map((v) {
         // use map-join instead of flatten here, as flatten only works on buffer
@@ -125,8 +132,9 @@ class TextSpanDefinition extends GrammarDefinition {
 }
 
 TextStyleEvaluator defaultTextStyleEvaluator = (style, theme, command) {
+  final op = command.argv[0];
   return () {
-        switch (command) {
+        switch (op) {
           case 'bold':
           case 'w700':
           case 'b':
