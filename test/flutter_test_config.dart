@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:golden_toolkit/golden_toolkit.dart';
 
@@ -8,6 +9,10 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
       await loadAppFonts();
       await testMain();
     },
-    config: GoldenToolkitConfiguration(),
+    config: GoldenToolkitConfiguration(
+      // Flutter is not pixel perfect between platforms, especially regarding font
+      // rendering. For now the goldens are macOS only.
+      skipGoldenAssertion: () => !Platform.isMacOS,
+    ),
   );
 }
