@@ -89,13 +89,13 @@ class Command {
 
 class TextSpanDefinition extends GrammarDefinition {
   @override
-  Parser start() => ref0(textSpan).end();
+  Parser start() => ref(textSpan).end();
 
-  Parser<MixedNode> textSpan() => ref0(span).intertwined<Node>(text().map((t) => TextNode(t))).map((subSpans) {
+  Parser<MixedNode> textSpan() => ref(span).intertwined<Node>(text().map((t) => TextNode(t))).map((subSpans) {
         return MixedNode(subSpans);
       });
 
-  Parser<SpanNode> span() => (beginSpan() & command() & ref0(textSpan) & endSpan()).map((list) {
+  Parser<SpanNode> span() => (beginSpan() & command() & ref(textSpan) & endSpan()).map((list) {
         final command = list[1] as Command;
         final node = list[2] as Node;
         return SpanNode(command, node);
@@ -114,7 +114,7 @@ class TextSpanDefinition extends GrammarDefinition {
   Parser<String> endSpan() => char('}');
   Parser<String> escape() => char('\\');
 
-  Parser<String> characterPrimitive() => [normalCharacter(), unicodeCharacter(), escapedCharacter()].toChoiceParser();
+  Parser<String> characterPrimitive() => [normalCharacter(), unicodeCharacter(), escapedCharacter()].toChoiceParser().cast<String>();
   Parser<String> normalCharacter() => [beginSpan(), endSpan(), escape()].toChoiceParser().neg().map((c) {
         return c;
       });
@@ -187,7 +187,7 @@ TextStyle defaultTextStyleEvaluator(style, theme, command) {
 }
 
 class TextSpanEvaluator {
-  final Parser<MixedNode> _parser = TextSpanDefinition().build<MixedNode>();
+  final Parser _parser = TextSpanDefinition().build();
   final TextTheme theme;
   final TextStyle initialStyle;
   final TextStyleEvaluator evaluator;

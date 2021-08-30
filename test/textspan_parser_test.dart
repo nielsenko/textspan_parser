@@ -58,10 +58,10 @@ void main() {
     final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator);
 
     final result = eval.evaluate('Hello {italic world!}');
-    expect(result.children!.length, 3);
-    expect(result.children![0].toPlainText(), 'Hello ');
-    expect(result.children![1].toPlainText(), 'world!');
-    expect(result.children![2].toPlainText(), '');
+    expect(result.children.length, 3);
+    expect(result.children[0].toPlainText(), 'Hello ');
+    expect(result.children[1].toPlainText(), 'world!');
+    expect(result.children[2].toPlainText(), '');
   });
 
   group('Goldens', () {
@@ -150,7 +150,7 @@ trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
         }, CustomHttpOverrides());
         await Future.delayed(const Duration(seconds: 1)); // wait for font to load
         return result;
-      }))!;
+      }));
 
       final builder = GoldenBuilder.column(
         wrap: (w) => SizedBox(
