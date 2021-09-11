@@ -131,7 +131,7 @@ class TextSpanDefinition extends GrammarDefinition {
   };
 }
 
-TextStyleEvaluator defaultTextStyleEvaluator = (style, theme, command) {
+TextStyle defaultTextStyleEvaluator(style, theme, command) {
   final op = command.argv[0];
   return () {
         switch (op) {
@@ -184,7 +184,7 @@ TextStyleEvaluator defaultTextStyleEvaluator = (style, theme, command) {
         }
       }() ??
       style; // fallback to same style, if new one not calculated
-};
+}
 
 class TextSpanEvaluator extends TextSpanDefinition {
   final TextTheme theme;

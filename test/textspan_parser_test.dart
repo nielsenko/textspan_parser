@@ -9,13 +9,7 @@ import 'package:textspan_parser/textspan_parser.dart';
 
 import 'fake_path_provider.dart';
 
-class CustomHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    // TODO: implement createHttpClient
-    return super.createHttpClient(context);
-  }
-}
+class CustomHttpOverrides extends HttpOverrides {}
 
 void main() {
   test('parse text', () {
@@ -96,7 +90,7 @@ void main() {
       await screenMatchesGolden(tester, 'theme_styles');
     });
 
-    TextStyleEvaluator customEvaluator = (style, theme, command) {
+    TextStyle customEvaluator(style, theme, command) {
       final arguments = command.argv;
       if (arguments.length > 1) {
         final op = arguments[0];
@@ -109,7 +103,7 @@ void main() {
         }
       }
       return defaultTextStyleEvaluator(style, theme, command);
-    };
+    }
 
     testGoldens('Complex example', (tester) async {
       final theme = Typography.englishLike2018;
@@ -142,7 +136,7 @@ trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
       }))!;
 
       final builder = GoldenBuilder.column(
-        wrap: (w) => Container(
+        wrap: (w) => SizedBox(
           child: w,
           width: 300, // force line-wrap
         ),
@@ -153,15 +147,15 @@ trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
 
     testGoldens('Alignment', (tester) async {
       final builder = GoldenBuilder.column(
-        wrap: (w) => Container(
+        wrap: (w) => SizedBox(
           child: w,
           width: 200,
         ),
       )
-        ..addScenario('plain', Text('Hello'))
+        ..addScenario('plain', const Text('Hello'))
         ..addScenario(
           'overflow',
-          Text.rich(
+          const Text.rich(
             TextSpan(children: [
               TextSpan(text: 'Hello my friend! '),
               TextSpan(text: 'How do you do?', style: TextStyle(decoration: TextDecoration.underline)),
@@ -170,14 +164,14 @@ trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
         )
         ..addScenario(
           'center',
-          Text.rich(
+          const Text.rich(
             TextSpan(text: 'Hello'),
             textAlign: TextAlign.center,
           ),
         )
         ..addScenario(
           'end',
-          Text.rich(
+          const Text.rich(
             TextSpan(text: 'Hello'),
             textAlign: TextAlign.end,
           ),
@@ -186,11 +180,11 @@ trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
           'overflow-then-end',
           Text.rich(
             TextSpan(children: [
-              TextSpan(text: 'Hello my friend! How do you do? '),
+              const TextSpan(text: 'Hello my friend! How do you do? '),
               WidgetSpan(
                 child: Flex(
                   direction: Axis.horizontal,
-                  children: [
+                  children: const [
                     Expanded(
                       child: Text(
                         'foo',
@@ -200,7 +194,7 @@ trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
                   ],
                 ),
               ),
-              TextSpan(text: 'Hello', style: TextStyle()),
+              const TextSpan(text: 'Hello', style: TextStyle()),
             ]),
           ),
         );
