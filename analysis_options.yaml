@@ -1,0 +1,2 @@
+# For lint rules and documentation, see https://github.com/dart-lang/lints
+include: package:flutter_lints/flutter.yaml
