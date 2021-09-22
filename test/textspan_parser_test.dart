@@ -37,12 +37,31 @@ void main() {
     expect(parser.parse('Hello {b}').isSuccess, isTrue); // but doesn't make sense
   });
 
+  test('bad format fails to parse', () {
+    final def = TextSpanDefinition();
+    final parser = def.build();
+    const badFormat = 'کیا {آپ کی صحت اب ایک}منزل تک سیڑھیاں چڑھنے میں {رکاوٹ ہے} ؟ اگر ہے، تو کس حد تک؟';
+    expect(parser.parse(badFormat).isSuccess, isFalse);
+  });
+
+  test('bad format still produce text span', () {
+    final theme = Typography.englishLike2018;
+    const style = TextStyle();
+    final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator);
+    const badFormat = 'کیا {آپ کی صحت اب ایک}منزل تک سیڑھیاں چڑھنے میں {رکاوٹ ہے} ؟ اگر ہے، تو کس حد تک؟';
+    expect(eval.evaluate(badFormat).toPlainText(), badFormat);
+  });
+
   test('evaluate textSpan', () {
     final theme = Typography.englishLike2018;
     const style = TextStyle();
-    final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build();
+    final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator);
 
-    expect(eval.parse('Hello {italic world!}').isSuccess, isTrue);
+    final result = eval.evaluate('Hello {italic world!}');
+    expect(result.children!.length, 3);
+    expect(result.children![0].toPlainText(), 'Hello ');
+    expect(result.children![1].toPlainText(), 'world!');
+    expect(result.children![2].toPlainText(), '');
   });
 
   group('Goldens', () {
@@ -53,12 +72,12 @@ void main() {
     testGoldens('Hello World!', (tester) async {
       final theme = Typography.englishLike2018;
       const style = TextStyle(fontWeight: FontWeight.normal);
-      final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build<TextSpan>();
+      final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator);
 
       final builder = GoldenBuilder.grid(columns: 2, widthToHeightRatio: 3)
-        ..addScenario('1', Text.rich(eval.parse('Hello {underline World!}').value))
-        ..addScenario('2', Text.rich(eval.parse('Hello {italic world!}. My name is {underline Kasper}').value))
-        ..addScenario('3', Text.rich(eval.parse('Hello {italic w{headline4 o}rld!}').value));
+        ..addScenario('1', Text.rich(eval.evaluate('Hello {underline World!}')))
+        ..addScenario('2', Text.rich(eval.evaluate('Hello {italic world!}. My name is {underline Kasper}')))
+        ..addScenario('3', Text.rich(eval.evaluate('Hello {italic w{headline4 o}rld!}')));
 
       await tester.pumpWidgetBuilder(builder.build());
       await screenMatchesGolden(tester, 'hello_world_grid');
@@ -67,9 +86,9 @@ void main() {
     testGoldens('Theme styles', (tester) async {
       final theme = Typography.englishLike2018;
       const style = TextStyle(fontWeight: FontWeight.normal);
-      final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator).build<TextSpan>();
+      final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator);
 
-      final builder = GoldenBuilder.column()..addScenario('styles', Text.rich(eval.parse(r'''
+      final builder = GoldenBuilder.column()..addScenario('styles', Text.rich(eval.evaluate(r'''
       {bodyText1 bodyText1}
       {bodyText2 bodyText2}
       {button button}
@@ -84,7 +103,7 @@ void main() {
       {overline overline}
       {subtitle1 subtitle1}
       {subtitle2 subtitle2}
-      ''').value));
+      ''')));
 
       await tester.pumpWidgetBuilder(builder.build());
       await screenMatchesGolden(tester, 'theme_styles');
@@ -108,12 +127,11 @@ void main() {
     testGoldens('Complex example', (tester) async {
       final theme = Typography.englishLike2018;
       const style = TextStyle(fontWeight: FontWeight.normal);
-      final eval = TextSpanEvaluator(theme, style, customEvaluator).build<TextSpan>();
+      final eval = TextSpanEvaluator(theme, style, customEvaluator);
 
       final span = (await tester.runAsync(() async {
         final result = HttpOverrides.runWithHttpOverrides(() {
-          return eval
-              .parse(r'''
+          return eval.evaluate(r'''
 {headline4 A complex example...}
 \n
 This is a normal paragraph, sprinkled with a bit of {italic italic}, a bit of 
@@ -128,8 +146,7 @@ of nested commands. This was achieved with the script:
 \n\n
 Using {font:Comic_Neue a {headline6 {italic dynamically}} loaded google font} is another 
 trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
-                  .replaceAll('\n', '')) // strip implicit newlines
-              .value;
+              .replaceAll('\n', '')); // strip implicit newlines
         }, CustomHttpOverrides());
         await Future.delayed(const Duration(seconds: 1)); // wait for font to load
         return result;

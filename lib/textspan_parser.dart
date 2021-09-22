@@ -186,13 +186,16 @@ TextStyle defaultTextStyleEvaluator(style, theme, command) {
       style; // fallback to same style, if new one not calculated
 }
 
-class TextSpanEvaluator extends TextSpanDefinition {
+class TextSpanEvaluator {
+  final Parser<MixedNode> _parser = TextSpanDefinition().build<MixedNode>();
   final TextTheme theme;
   final TextStyle initialStyle;
   final TextStyleEvaluator evaluator;
 
   TextSpanEvaluator(this.theme, this.initialStyle, this.evaluator);
 
-  @override
-  Parser<TextSpan> start() => super.textSpan().map((node) => node.toTextSpan(initialStyle, theme, evaluator));
+  TextSpan evaluate(String input) {
+    final result = _parser.parse(input);
+    return result.isSuccess ? result.value.toTextSpan(initialStyle, theme, evaluator) : TextSpan(text: input);
+  }
 }
