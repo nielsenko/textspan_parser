@@ -5,15 +5,13 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  schedule:
-    - cron: "0 0 * * *"
 
 jobs:
   build-test-and-coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: subosito/flutter-action@v1
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
 
       - name: Install dependencies
         run: flutter pub get
@@ -28,19 +26,22 @@ jobs:
           file: coverage/lcov.info
 
   multi-platform-test:
+    name: ${{ matrix.os }}-${{ matrix.channel }}-${{ matrix.pub }}d
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        channel: [stable, beta, dev]
+        channel: [stable, beta, master]
+        pub: [downgrade, upgrade]
+        
     steps:
-      - uses: actions/checkout@v2
-      - uses: subosito/flutter-action@v1
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
         with:
           channel: ${{ matrix.channel }}
 
-      - name: Install dependencies
-        run: flutter pub get
+      - name: Install ${{ matrix.pub }}d dependencies
+        run: flutter pub ${{ matrix.pub }}
 
       - name: Run tests
         run: flutter test
