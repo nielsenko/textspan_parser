@@ -101,8 +101,7 @@ class TextSpanDefinition extends GrammarDefinition {
         return SpanNode(command, node);
       });
 
-  Parser<Command> command() =>
-      ((letter() & word().star()).flatten().trim()).separatedBy<String>(char(':'), includeSeparators: false).map((c) => Command(c));
+  Parser<Command> command() => ((letter() & word().star()).flatten().trim()).separatedBy<String>(char(':'), includeSeparators: false).map((c) => Command(c));
 
   Parser<String> text() => characterPrimitive().star().map((v) {
         // use map-join instead of flatten here, as flatten only works on buffer

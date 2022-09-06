@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golden_toolkit/golden_toolkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:textspan_parser/textspan_parser.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import 'fake_path_provider.dart';
 
@@ -45,7 +45,7 @@ void main() {
   });
 
   test('bad format still produce text span', () {
-    final theme = Typography.englishLike2018;
+    const theme = Typography.englishLike2018;
     const style = TextStyle();
     final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator);
     const badFormat = 'کیا {آپ کی صحت اب ایک}منزل تک سیڑھیاں چڑھنے میں {رکاوٹ ہے} ؟ اگر ہے، تو کس حد تک؟';
@@ -53,7 +53,7 @@ void main() {
   });
 
   test('evaluate textSpan', () {
-    final theme = Typography.englishLike2018;
+    const theme = Typography.englishLike2018;
     const style = TextStyle();
     final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator);
 
@@ -70,7 +70,7 @@ void main() {
     });
 
     testGoldens('Hello World!', (tester) async {
-      final theme = Typography.englishLike2018;
+      const theme = Typography.englishLike2018;
       const style = TextStyle(fontWeight: FontWeight.normal);
       final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator);
 
@@ -84,7 +84,7 @@ void main() {
     });
 
     testGoldens('Theme styles', (tester) async {
-      final theme = Typography.englishLike2018;
+      const theme = Typography.englishLike2018;
       const style = TextStyle(fontWeight: FontWeight.normal);
       final eval = TextSpanEvaluator(theme, style, defaultTextStyleEvaluator);
 
@@ -125,7 +125,7 @@ void main() {
     }
 
     testGoldens('Complex example', (tester) async {
-      final theme = Typography.englishLike2018;
+      const theme = Typography.englishLike2018;
       const style = TextStyle(fontWeight: FontWeight.normal);
       final eval = TextSpanEvaluator(theme, style, customEvaluator);
 
@@ -154,8 +154,8 @@ trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
 
       final builder = GoldenBuilder.column(
         wrap: (w) => SizedBox(
-          child: w,
           width: 300, // force line-wrap
+          child: w,
         ),
       )..addScenario('complex', Text.rich(span));
       await tester.pumpWidgetBuilder(builder.build());
@@ -165,8 +165,8 @@ trick possible with a custom evaluator. Here we loaded 'Comic Neue'.'''
     testGoldens('Alignment', (tester) async {
       final builder = GoldenBuilder.column(
         wrap: (w) => SizedBox(
-          child: w,
           width: 200,
+          child: w,
         ),
       )
         ..addScenario('plain', const Text('Hello'))
